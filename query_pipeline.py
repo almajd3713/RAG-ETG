@@ -105,17 +105,45 @@ def lookup_query(query_info):
 
     results = collection.query(
       query_embeddings=[emb],
-      n_results=5,
+      n_results=config['retrieval_settings']['top_k'],
       where=where_clause
     )
     
     return results
 
+def get_llm_answer(query, context_array):
+    """
+    Process the user query and context array to generate a response.
+    """
+    context_block = "\n---\n".join(context_array)
+    print(f"Context Chunks: {context_block[:500]}...")  # Print first 500 characters for debugging
+    system_prompt = f"""
+    You are an expert on the video game "Enter the Gungeon". Use the context below to answer the user question. Do not make up information not found in the context. Be as concise as you can while still providing a complete answer. If the context does not contain enough information to answer the question, say "I don't know" or "Not enough information in the context to answer this question.".
+    Context:
+    {context_block}
+    
+    User Question:
+    {query}
+    """
+    print(f"System Prompt: {system_prompt}")
+    
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": query}
+        ],
+        max_tokens=500,
+        temperature=0.0
+    )
+    if response.choices:
+        return response.choices[0].message.content.strip()
+
 if __name__ == "__main__":
     if config['is_cli']:
         user_query = input("Enter your query: ")
     else:
-        user_query = "what items synergize with the metronome"
+        user_query = "what items synergize with the metronome? List them all and their effects."
 
     if not config['skip_reformatting']:
       query_info = extract_query_info(user_query)
@@ -124,6 +152,17 @@ if __name__ == "__main__":
     print("Extracted Query Information:")
     print(query_info)
 
-    if query_info:
-        results = lookup_query(query_info)
-        top_k_results = results[:config['retrieval_settings']['top_k']]
+    results = lookup_query(query_info)
+    print("Top K Results:")
+    context_array = [document for inner_list in results['documents'] for document in inner_list]
+
+    # for i, result in enumerate(results['documents']):
+    #     print(f"Result {i+1}:")
+    #     print(f"Text: {result['text']}")
+    #     print(f"Metadata: {result['metadata']}")
+    #     print(f"Embedding: {result['embedding'][:10]}...")  # Print first 10 elements of the embedding
+    #     print()
+
+    llm_answer = get_llm_answer(user_query, context_array)
+    print("LLM Answer:")
+    print(llm_answer)
