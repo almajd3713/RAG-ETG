@@ -201,6 +201,30 @@ def filter_english_chunks(chunks):
             logging.info(f"Dropped non-English chunk: {chunk.get('id', '')}")
     return english_chunks
 
+def augment_text_chunk(chunk):
+    original_text = chunk["text"]
+    title = chunk["meta"].get("title", "")
+    section = chunk["meta"].get("section", "")
+    augmented_text = f"Title: {title}\nSection: {section}\n\n{original_text}"
+    return augmented_text
+
+def augment_chunks(chunks):
+    for chunk in chunks:
+        chunk["text"] = augment_text_chunk(chunk)
+    return chunks
+
+def filter_see_also_chunks(chunks):
+    """
+    Filters out chunks that are only 'See also' sections.
+    """
+    filtered_chunks = []
+    for chunk in chunks:
+        if not chunk['meta']['section'].lower().startswith('see also'):
+            filtered_chunks.append(chunk)
+        else:
+            logging.info(f"Dropped 'See also' chunk: {chunk.get('id', '')}")
+    return filtered_chunks
+
 if __name__ == "__main__":
   logging.info("Starting cleanup...")
   clean_redirect_files()
@@ -212,6 +236,12 @@ if __name__ == "__main__":
   chunks = load_and_flatten_pages("parsed_gungeon_pages_json")
   logging.info("Flattening finished.")
   logging.info(f"Total chunks: {len(chunks)}")
+  logging.info("Filtering 'See also' chunks...")
+  chunks = filter_see_also_chunks(chunks)
+  logging.info(f"Total chunks after filtering 'See also': {len(chunks)}")
+  logging.info("Augmenting text in chunks...")
+  chunks = augment_chunks(chunks)
+  logging.info("Text augmentation complete.")
   logging.info("Filtering English chunks...")
   chunks = filter_english_chunks(chunks)
   logging.info(f"Total English chunks: {len(chunks)}")

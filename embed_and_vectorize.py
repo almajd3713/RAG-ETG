@@ -28,12 +28,13 @@ def embed_and_vectorize_data(data, model_name, model):
   collection_name = f"rag_etg_{model_name}"
   collection = client.create_collection(name=collection_name)
   for idx, chunk in enumerate(data, 1):
+    text_to_embed = chunk["text"]
     emb = model.encode(
-      chunk["text"], normalize_embeddings=True,
+      text_to_embed, normalize_embeddings=True,
       device='cuda', batch_size=64, show_progress_bar=False
     )
     collection.add(
-      documents=[chunk["text"]],
+      documents=[text_to_embed],
       metadatas=[{**chunk["meta"], "id": chunk["id"]}],
       ids=[chunk["id"]],
       embeddings=[emb.tolist()]
@@ -54,8 +55,8 @@ if __name__ == "__main__":
 
     logging.info("Loading embedding models...")
     models = {
-        "bge": SentenceTransformer("BAAI/bge-base-en-v1.5"),
-        "e5": SentenceTransformer("intfloat/e5-base-v2"),
+        # "bge": SentenceTransformer("BAAI/bge-base-en-v1.5"),
+        # "e5": SentenceTransformer("intfloat/e5-base-v2"),
         "minillm": SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
     }
     logging.info("Models loaded successfully.")
