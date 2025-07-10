@@ -11,6 +11,9 @@ import logging
 import datetime
 import os
 
+with open("config.json", "r") as f:
+    config = json.load(f)
+
 log_dir = "logs/embed_and_vectorize"
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
@@ -54,16 +57,17 @@ if __name__ == "__main__":
     logging.info(f"Loaded {len(data)} chunks.")
 
     logging.info("Loading embedding models...")
-    models = {
+    # models = {
         # "bge": SentenceTransformer("BAAI/bge-base-en-v1.5"),
         # "e5": SentenceTransformer("intfloat/e5-base-v2"),
-        "minillm": SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-    }
+        # "minillm": SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+    # }
     logging.info("Models loaded successfully.")
 
     logging.info("Starting embedding and vectorization process...")
-    for model_name, model in models.items():
-        logging.info(f"Embedding and vectorizing using {model_name} model...")
-        embed_and_vectorize_data(data, model_name, model)
-        logging.info(f"Data embedded, vectorized, and stored in collection: rag_etg_{model_name}")
+    model, model_name = config['embedding_model']['name'], config['embedding_model']['collection_name']
+    model = SentenceTransformer(model)
+    logging.info(f"Embedding and vectorizing using {model_name} model...")
+    embed_and_vectorize_data(data, model_name, model)
+    logging.info(f"Data embedded, vectorized, and stored in collection: rag_etg_{model_name}")
     logging.info("Embedding and vectorization process completed.")

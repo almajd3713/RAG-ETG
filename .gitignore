@@ -6,3 +6,4 @@ logs
 .venv
 all_chunks.json
 play_around.ipynb
+.env
