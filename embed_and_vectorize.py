@@ -32,6 +32,8 @@ def embed_and_vectorize_data(data, model_name, model):
   collection = client.create_collection(name=collection_name)
   for idx, chunk in enumerate(data, 1):
     text_to_embed = chunk["text"]
+    if config.get('prepend_chunks_and_queries', True):
+      text_to_embed = f"Represent this sentence for searching relevant passages: {text_to_embed}"
     emb = model.encode(
       text_to_embed, normalize_embeddings=True,
       device='cuda', batch_size=64, show_progress_bar=False
@@ -49,6 +51,11 @@ def embed_and_vectorize_data(data, model_name, model):
 def save_vectors():
   client.persist()
   
+# models = {
+    # "bge": SentenceTransformer("BAAI/bge-base-en-v1.5"),
+    # "e5": SentenceTransformer("intfloat/e5-base-v2"),
+    # "minillm": SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+# }
   
 if __name__ == "__main__":
     client.reset()  # Reset the client to start fresh
@@ -57,17 +64,14 @@ if __name__ == "__main__":
     logging.info(f"Loaded {len(data)} chunks.")
 
     logging.info("Loading embedding models...")
-    # models = {
-        # "bge": SentenceTransformer("BAAI/bge-base-en-v1.5"),
-        # "e5": SentenceTransformer("intfloat/e5-base-v2"),
-        # "minillm": SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-    # }
+    model, model_name = config['embedding_model']['name'], config['embedding_model']['collection_name']
+    model = SentenceTransformer(model)
     logging.info("Models loaded successfully.")
 
     logging.info("Starting embedding and vectorization process...")
-    model, model_name = config['embedding_model']['name'], config['embedding_model']['collection_name']
-    model = SentenceTransformer(model)
+
     logging.info(f"Embedding and vectorizing using {model_name} model...")
     embed_and_vectorize_data(data, model_name, model)
     logging.info(f"Data embedded, vectorized, and stored in collection: rag_etg_{model_name}")
+    
     logging.info("Embedding and vectorization process completed.")

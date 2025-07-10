@@ -1,9 +1,14 @@
 {
-  
   "embedding_model": {
-    // "name": "all-MiniLM-L6-v2",
-    // "collection_name": "minillm"
     "name": "BAAI/bge-base-en-v1.5",
     "collection_name": "bge"
+  },
+  "prepend_chunks_and_queries": false,
+  "skip_reformatting": false,
+  "is_cli": false,
+
+  "retrieval_settings": {
+    "top_k": 2,
+    "similarity_threshold": 0.7
   }
 }
