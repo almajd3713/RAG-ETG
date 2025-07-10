@@ -184,7 +184,7 @@ def load_and_flatten_pages(input_dir):
 def is_english(chunk):
     meta_title = chunk.get("meta", {}).get("title", "")
     text = chunk.get("text", "")
-    if re.search(r'\bzh\b', text) or re.search(r'\bzh\b', meta_title):
+    if re.search(r'\bzh\b', meta_title):
         return False
     try:
         lang = detect(text)
@@ -213,16 +213,17 @@ def augment_chunks(chunks):
         chunk["text"] = augment_text_chunk(chunk)
     return chunks
 
-def filter_see_also_chunks(chunks):
+def filter_irrelevant_chunks(chunks):
     """
-    Filters out chunks that are only 'See also' sections.
+    Filters out irrelevant chunks (See also and References).
     """
     filtered_chunks = []
     for chunk in chunks:
-        if not chunk['meta']['section'].lower().startswith('see also'):
+        if (not chunk['meta']['section'].lower().startswith('see also') and
+            not chunk['meta']['section'] == "References"):
             filtered_chunks.append(chunk)
         else:
-            logging.info(f"Dropped 'See also' chunk: {chunk.get('id', '')}")
+            logging.info(f"Dropped chunk: {chunk.get('id', '')}")
     return filtered_chunks
 
 if __name__ == "__main__":
@@ -236,9 +237,9 @@ if __name__ == "__main__":
   chunks = load_and_flatten_pages("parsed_gungeon_pages_json")
   logging.info("Flattening finished.")
   logging.info(f"Total chunks: {len(chunks)}")
-  logging.info("Filtering 'See also' chunks...")
-  chunks = filter_see_also_chunks(chunks)
-  logging.info(f"Total chunks after filtering 'See also': {len(chunks)}")
+  logging.info("Filtering irrelevant chunks...")
+  chunks = filter_irrelevant_chunks(chunks)
+  logging.info(f"Total chunks after filtering irrelevant ones: {len(chunks)}")
   logging.info("Augmenting text in chunks...")
   chunks = augment_chunks(chunks)
   logging.info("Text augmentation complete.")
