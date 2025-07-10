@@ -1,0 +1,8 @@
+chroma_db
+gungeon_pages
+parsed_gungeon_pages_json
+evaluation
+logs
+.venv
+all_chunks.json
+play_around.ipynb
