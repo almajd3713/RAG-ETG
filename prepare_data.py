@@ -42,12 +42,31 @@ import json
 import re
 from langdetect import detect, LangDetectException
 
+def collapse_bullet_points(content_list):
+    collapsed_content = []
+    pending_bullets = 0
+    
+    for item in content_list:
+        stripped = item.strip()
+        if stripped == '*':
+            pending_bullets += 1
+        else:
+            if pending_bullets > 0:
+                collapsed_content.append('*' * pending_bullets + ' ' + stripped)
+                pending_bullets = 0
+            else:
+                collapsed_content.append(stripped)
+    
+    return collapsed_content
+
 def clean_links_and_templates(text):
+    # Convert {{Synergy|...}} to readable format
+    text = re.sub(r"\{\{Synergy\|([^\}]+)\}\}", r"Synergy: \1: ", text)
     # Preserve links in format: display_text (link_target)
     text = re.sub(r"\[\[([^\|\]]+)\|([^\]]+)\]\]", r"\2 (\1)", text)  # [[target|text]] -> text (target)
     text = re.sub(r"\[\[([^\]]+)\]\]", r"\1", text)  # [[target]] -> target
     text = re.sub(r"\{\{[^\}]+\}\}", "", text)  # remove templates
-    text = re.sub(r"\[\[Category:[^\]]+\]\]", "", text)
+    text = re.sub(r"\[\[Category:[^\]]+\]\]", "", text) # remove categories
     return text.strip()
 
 
@@ -102,12 +121,21 @@ def parse_wikitext_files(input_directory="gungeon_pages", output_directory="pars
                       current_section["content"].append(f"{text} ({target})")
 
                   elif isinstance(node, mwparserfromhell.nodes.Template):
-                      continue  # only keep templates for infobox up top
+                    # skip infobox as it was already handled before
+                    if "infobox" in node.name.lower():
+                        continue
+                    # Handle other templates
+                    cleaned_template = clean_links_and_templates(str(node))
+                    current_section["content"].append(f"{cleaned_template}")
+                  elif isinstance(node, mwparserfromhell.nodes.Tag):
+                    current_section["content"].append(node.wiki_markup.strip())
 
                 # Add last section
                 if current_section["content"]:
                     sections.append(current_section)
-
+                # Collapse bullet points
+                for section in sections:
+                    section["content"] = collapse_bullet_points(section["content"])
                 # Save as JSON
                 result = {
                     "title": title,

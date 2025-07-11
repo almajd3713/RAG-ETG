@@ -9,6 +9,6 @@
 
   "retrieval_settings": {
     "top_k": 2,
-    "similarity_threshold": 0.7
+    "similarity_threshold": 0.6
   }
 }
