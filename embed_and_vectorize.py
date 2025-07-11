@@ -29,7 +29,15 @@ def load_data(file_path):
 
 def embed_and_vectorize_data(data, model_name, model):
   collection_name = f"rag_etg_{model_name}"
-  collection = client.create_collection(name=collection_name)
+  collection = client.create_collection(
+    name=collection_name,
+    configuration={
+      "hnsw": {
+        "ef_construction": 200,
+        "space": "cosine",
+      }
+    }
+  )
   for idx, chunk in enumerate(data, 1):
     text_to_embed = chunk["text"]
     if config.get('prepend_chunks_and_queries', True):
