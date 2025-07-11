@@ -29,6 +29,13 @@ class KnowledgeBase:
 		"""
 		query_info = self.embedder.extract_query_info(query, self.chat_history.get_context())
 		if self.logger: self.logger.info(f"Query Info: {json.dumps(query_info, indent=2)}")
+  
+		# Check if the query has enough context to skip lookup, avoids bloating context with unnecessary information.
+		if self.check_if_in_context(query_info['query']):
+			if self.logger: self.logger.info("Query has enough context, skipping lookup.")
+			return [self.chat_history.get_context()]
+  
+		# Query the ChromaDB collection
 		context_raw = self._query(query_info)
 		context_array = [doc['document'] for doc in context_raw]
 		if self.logger: self.logger.info(f"Context Array: {context_array}")
@@ -36,7 +43,7 @@ class KnowledgeBase:
 		if not context_array:
 			return "Not enough information in the context to answer this question."
 
-		return context_array
+		return query_info['query'], context_array
 
 	def _query(self, query_info):
 			"""
@@ -78,3 +85,33 @@ class KnowledgeBase:
 				]
 				return filtered_docs
 			return results
+	def check_if_in_context(self, reformulated_query):
+		"""
+		Check if the query has enough context to skip lookup, avoids bloating context with unnecessary information.
+		"""
+		if self.logger: self.logger.info(f"Checking if context is enough for query: {reformulated_query}, current context length: {len(self.chat_history.context_history)}")
+		if not self.chat_history: return False
+  
+		context = [item['text'] for item in self.chat_history.context_history]
+		scores = [
+			self._cosine_similarity(self.embed(reformulated_query), self.embed(item)) for item in context
+		]
+		if self.logger: self.logger.info(f"Context Scores: {scores}")
+		has_enough_context = any(score < self.config['retrieval_settings']['similarity_threshold'] for score in scores)
+		if self.logger: self.logger.info(f"Should lookup: {has_enough_context}")
+		return has_enough_context
+
+	def _cosine_similarity(self, vec1, vec2):
+		"""
+		Compute the cosine similarity between two vectors.
+		"""
+		if len(vec1) != len(vec2):
+			raise ValueError("Vectors must be of the same length")
+
+		dot_product = sum(a * b for a, b in zip(vec1, vec2))
+		magnitude1 = sum(a ** 2 for a in vec1) ** 0.5
+		magnitude2 = sum(b ** 2 for b in vec2) ** 0.5
+
+		if magnitude1 == 0 or magnitude2 == 0:
+			return 0.0
+		return dot_product / (magnitude1 * magnitude2)

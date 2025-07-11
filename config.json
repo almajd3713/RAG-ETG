@@ -14,6 +14,7 @@
   "log_dir": "logs",
   "chat_history": {
     "chat_limit": 8,
-    "context_limit": 4
+    "context_limit": 4,
+    "lookup_score_threshold": 0.5
   }
 }

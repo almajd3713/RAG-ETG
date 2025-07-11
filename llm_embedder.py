@@ -92,3 +92,4 @@ class LLMEmbedder:
 			return f"Represent this sentence for searching relevant passages: {query_text}"
 		else: 
 			return query_text
+ 
