@@ -7,3 +7,4 @@ logs
 all_chunks.json
 play_around.ipynb
 .env
+__pycache__
