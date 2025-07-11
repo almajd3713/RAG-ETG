@@ -32,9 +32,9 @@ class LLMManager:
     def embed(self, text):
         return self.embedder.embed(text)
       
-    def query(self, query):
+    def query(self, query, additional_context=None):
         """
-        Process the user query to extract relevant information and retrieve context.
+        Process the user query to extract relevant information and retrieve context, and combine it with previous context
         """
         context_array = self.knowledge_base.query(query)
         
@@ -43,13 +43,16 @@ class LLMManager:
         
         return self._query(query, context_array)
 
-    def _query(self, query, context_array):
+    def _query(self, query, context_array, additional_context=None):
         """
         Process the user query and context array to generate a response.
         """
         context_block = "\n---\n".join(context_array)
         system_prompt = f"""
-        You are an expert on the video game "Enter the Gungeon". Use the context below to answer the user question. Do not make up information not found in the context. Be as concise as you can while still providing a complete answer. If the context does not contain enough information to answer the question, say "I don't know" or "Not enough information in the context to answer this question.".
+        You are an expert on the video game "Enter the Gungeon". Use the context below to answer the user question. Do not make up information not found in the context. Be as concise as you can while still providing a complete answer. {"Previous Context and conversations is included. " if additional_context else ""}If the context does not contain enough information to answer the question, say "I don't know" or "Not enough information in the context to answer this question.".
+        
+        {additional_context if additional_context else ""}
+                
         Context:
         {context_block}
         
