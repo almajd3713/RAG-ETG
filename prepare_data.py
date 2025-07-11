@@ -61,7 +61,7 @@ def collapse_bullet_points(content_list):
 
 def clean_links_and_templates(text):
     # Convert {{Synergy|...}} to readable format
-    text = re.sub(r"\{\{Synergy\|([^\}]+)\}\}", r"Synergy: \1: ", text)
+    text = re.sub(r"\{\{Synergy\|([^\}]+)\}\}", r"Synergy name: \1\n Synergy description: ", text)
     # Convert {{Quality|...}} to readable format
     text = re.sub(r"\{\{Quality\|([^\}]+)\}\}", r"Quality: \1 ", text)
     # Preserve links in format: display_text (link_target)
