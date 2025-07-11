@@ -55,13 +55,10 @@ class LLMManager:
             if self.persistent:
                 additional_context = str(self.chat_history)
             reformulated_query, context_array = self.knowledge_base.query(query)
-
-            if not context_array:
-              return "Not enough information in the context to answer this question."
-
+            
             answer = self._query(reformulated_query, context_array=context_array, additional_context=additional_context)
             if self.persistent:
-                self.chat_history.inqueue_context("\n---\n".join(context_array))
+                if context_array: self.chat_history.inqueue_context(context_array)
                 self.chat_history.inqueue_message("user", query)
                 self.chat_history.inqueue_message("assistant", answer)
             return answer
@@ -73,7 +70,7 @@ class LLMManager:
         """
         Process the user query and context array to generate a response.
         """
-        context_block = "\n---\n".join(context_array)
+        context_block = "\n".join([f"\n--- Document ---\n{c}\n--- Document End ---" for c in context_array]) if context_array else None
         system_prompt = f"""
         You are an expert on the video game "Enter the Gungeon". Use the context below to answer the user question. Do not make up information not found in the context. Be as concise as you can while still providing a complete answer. {"Previous Context and conversations is included. " if additional_context else ""}If the context does not contain enough information to answer the question, say "I don't know" or "Not enough information in the context to answer this question.".
 

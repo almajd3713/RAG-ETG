@@ -30,8 +30,8 @@ class ChatHistory:
     def inqueue_context(self, context):
         if self.logger:
             self.logger.info(f"Inqueue context: {context[:100]}...")
-        self.context_history.append(context)
-        if len(self.context_history) > self.context_limit:
+        self.context_history.extend(context)
+        while len(self.context_history) > self.context_limit:
             self.dequeue_context()
 
     def dequeue_context(self):
@@ -42,15 +42,15 @@ class ChatHistory:
         return None
 
     def __str__(self):
-      return """
-      Previous Context:
-      """ + "\n".join(self.context_history) + """
-      Previous Messages:
-      """ + "\n".join([f"{m['role']}: {m['text']}" for m in self.message_history]) + """
-    """
+        return (
+            "Previous Context:\n" +
+            "\n".join([f"\n--- Document ---\n{c}\n--- Document End ---" for c in self.context_history]) +
+            "\nPrevious Messages:\n" +
+            "\n".join([f"{m['role']}: {m['text']}" for m in self.message_history])
+        )
     
     def get_chat(self):
         return f'{"\n".join([f"{m["role"]}: {m["text"]}" for m in self.message_history])}'
 
     def get_context(self):
-        return "\n".join(self.context_history)
+        return "\n".join([f"\n--- Document ---\n{c}\n--- Document End ---" for c in self.context_history])

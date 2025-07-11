@@ -68,6 +68,7 @@ class LLMEmbedder:
 			}}
 			"""
 			if self.logger: self.logger.info(f"Reformulator System Prompt: {system_prompt}")
+			if self.logger: self.logger.info(f"Reformulator User Query: {query}")
 			response = self.groq_client.chat.completions.create(
 					model="llama-3.1-8b-instant",
 					messages=[

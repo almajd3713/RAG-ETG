@@ -59,9 +59,9 @@ def collapse_bullet_points(content_list):
     
     return collapsed_content
 
-def clean_links_and_templates(text):
+def clean_links_and_templates(text, filename):
     # Convert {{Synergy|...}} to readable format
-    text = re.sub(r"\{\{Synergy\|([^\}]+)\}\}", r"Synergy name: \1\n Synergy description: ", text)
+    text = re.sub(r"\{\{Synergy\|([^\}]+)\}\}", fr"the {filename.split('.')[0]} has a synergy called \1: ", text)
     # Convert {{Quality|...}} to readable format
     text = re.sub(r"\{\{Quality\|([^\}]+)\}\}", r"Quality: \1 ", text)
     # Preserve links in format: display_text (link_target)
@@ -98,7 +98,7 @@ def parse_wikitext_files(input_directory="gungeon_pages", output_directory="pars
                 infobox = None
                 for template in wikicode.filter_templates():
                     if "infobox" in template.name.lower():
-                        infobox = {param.name.strip(): clean_links_and_templates(str(param.value)) for param in template.params}
+                        infobox = {param.name.strip(): clean_links_and_templates(str(param.value), filename) for param in template.params}
                         break
 
                 # Extract and group sections
@@ -127,7 +127,7 @@ def parse_wikitext_files(input_directory="gungeon_pages", output_directory="pars
                     if "infobox" in node.name.lower():
                         continue
                     # Handle other templates
-                    cleaned_template = clean_links_and_templates(str(node))
+                    cleaned_template = clean_links_and_templates(str(node), filename)
                     current_section["content"].append(f"{cleaned_template}")
                   elif isinstance(node, mwparserfromhell.nodes.Tag):
                     current_section["content"].append(node.wiki_markup.strip())
