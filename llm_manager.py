@@ -1,7 +1,7 @@
 import json
 from llm_embedder import LLMEmbedder
 from llm_knowledge_base import KnowledgeBase
-from persistent_chat import ChatHistory
+from chat_history import ChatHistory
 import logging
 import datetime
 
@@ -22,6 +22,7 @@ client = Groq(api_key=os.getenv("GROQ_KEY"))
 
 class LLMManager:
     def __init__(self, config, persistent=False, log_dir=None):
+        self.config = config
         if log_dir:
             log_dir = os.path.join(log_dir, "llm_manager")
             self.logger = True
@@ -31,15 +32,15 @@ class LLMManager:
             logging.basicConfig(level=logging.INFO, filename=os.path.join(log_dir, f"{current_time}.log"),
                                 format='%(asctime)s - %(levelname)s - %(message)s')
         
-        self.config = config
-        self.embedder = LLMEmbedder(client, config, logging)
-        self.knowledge_base = KnowledgeBase(self.embedder, config, logging)
         self.persistent = persistent
         if self.persistent:
             self.chat_history = ChatHistory(
                 chat_limit=config['chat_history']['chat_limit'],
                 context_limit=config['chat_history']['context_limit']
             )
+        else: self.chat_history = None
+        self.embedder = LLMEmbedder(client, config, logging)
+        self.knowledge_base = KnowledgeBase(self.embedder, self.chat_history, config, logging)
 
 
     def embed(self, text):

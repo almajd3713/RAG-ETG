@@ -1,8 +1,8 @@
 import json
 
 import chromadb
+from chat_history import ChatHistory
 from llm_embedder import LLMEmbedder
-from chromadb import Collection
 
 # --- SETUP ---
 client = chromadb.PersistentClient(
@@ -11,9 +11,10 @@ client = chromadb.PersistentClient(
 # ----------------
 
 class KnowledgeBase:
-	def __init__(self, embedder: LLMEmbedder, config: dict, logger=None):
+	def __init__(self, embedder: LLMEmbedder, chat_history: ChatHistory, config: dict,  logger=None):
 		self.config = config
 		self.embedder = embedder
+		self.chat_history = chat_history
 		self.collection = client.get_collection(
 			name=f"rag_etg_{config['embedding_model']['collection_name']}"
 		)
@@ -26,7 +27,7 @@ class KnowledgeBase:
 		"""
 		Process the user query to extract relevant information and retrieve context.
 		"""
-		query_info = self.embedder.extract_query_info(query)
+		query_info = self.embedder.extract_query_info(query, self.chat_history.get_context())
 		if self.logger: self.logger.info(f"Query Info: {json.dumps(query_info, indent=2)}")
 		context_raw = self._query(query_info)
 		context_array = [doc['document'] for doc in context_raw]
