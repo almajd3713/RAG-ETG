@@ -1,6 +1,3 @@
-import json
-import chromadb
-from sentence_transformers import SentenceTransformer
 
 # --- SETUP ---
 
@@ -51,3 +48,9 @@ class ChatHistory:
       Previous Messages:
       """ + "\n".join([f"{m['role']}: {m['text']}" for m in self.message_history]) + """
     """
+    
+    def get_chat(self):
+        return f'{"\n".join([f"{m["role"]}: {m["text"]}" for m in self.message_history])}'
+
+    def get_context(self):
+        return "\n".join(self.context_history)
