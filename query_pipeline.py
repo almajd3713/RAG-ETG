@@ -109,6 +109,18 @@ def lookup_query(query_info):
       where=where_clause
     )
     
+    threshold = config['retrieval_settings']['similarity_threshold']
+    if threshold is not None:
+      # Extract raw fields
+      documents = results['documents'][0]
+      distances = results['distances'][0]
+      metadatas = results['metadatas'][0]
+
+      # Filter based on distance
+      filtered_docs = [
+          {"document": doc, "metadata": meta, "distance": dist} for doc, dist, meta in zip(documents, distances, metadatas) if dist <= threshold
+      ]
+      return filtered_docs
     return results
 
 def get_llm_answer(query, context_array):
@@ -116,7 +128,6 @@ def get_llm_answer(query, context_array):
     Process the user query and context array to generate a response.
     """
     context_block = "\n---\n".join(context_array)
-    print(f"Context Chunks: {context_block[:500]}...")  # Print first 500 characters for debugging
     system_prompt = f"""
     You are an expert on the video game "Enter the Gungeon". Use the context below to answer the user question. Do not make up information not found in the context. Be as concise as you can while still providing a complete answer. If the context does not contain enough information to answer the question, say "I don't know" or "Not enough information in the context to answer this question.".
     Context:
@@ -125,7 +136,6 @@ def get_llm_answer(query, context_array):
     User Question:
     {query}
     """
-    print(f"System Prompt: {system_prompt}")
     
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
@@ -153,15 +163,10 @@ if __name__ == "__main__":
     print(query_info)
 
     results = lookup_query(query_info)
-    print("Top K Results:")
-    context_array = [document for inner_list in results['documents'] for document in inner_list]
-
-    # for i, result in enumerate(results['documents']):
-    #     print(f"Result {i+1}:")
-    #     print(f"Text: {result['text']}")
-    #     print(f"Metadata: {result['metadata']}")
-    #     print(f"Embedding: {result['embedding'][:10]}...")  # Print first 10 elements of the embedding
-    #     print()
+    print("Top K Result scores:")
+    for i, doc in enumerate(results):
+        print(f"{doc['metadata']['id']} score: {doc['distance']}")
+    context_array = [doc['document'] for doc in results]
 
     llm_answer = get_llm_answer(user_query, context_array)
     print("LLM Answer:")
