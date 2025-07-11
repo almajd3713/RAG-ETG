@@ -47,7 +47,7 @@ class ChatHistory:
     def __str__(self):
       return """
       Previous Context:
-      """ + "\n".join([c['text'] for c in self.context_history]) + """
+      """ + "\n".join(self.context_history) + """
       Previous Messages:
       """ + "\n".join([f"{m['role']}: {m['text']}" for m in self.message_history]) + """
     """
