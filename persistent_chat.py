@@ -3,23 +3,7 @@ import chromadb
 from sentence_transformers import SentenceTransformer
 
 # --- SETUP ---
-with open("config.json", "r") as f:
-    config = json.load(f)
-collection_name = f"rag_etg_{config['embedding_model']['collection_name']}"
-client = chromadb.PersistentClient(
-    path="chroma_db",
-)
-collection = client.get_collection(
-    name=collection_name
-)
-model = SentenceTransformer(config['embedding_model']['name'])
 
-import os
-import dotenv
-dotenv.load_dotenv()
-from groq import Groq
-# Initialize Groq client
-client = Groq(api_key=os.getenv("GROQ_KEY"))
 # ----------------
 
 class ChatHistory:
@@ -42,8 +26,6 @@ class ChatHistory:
         return None
 
     def inqueue_context(self, context):
-        if isinstance(context, str):
-            context = {"text": context}
         self.context_history.append(context)
         if len(self.context_history) > self.context_limit:
             self.dequeue_context()

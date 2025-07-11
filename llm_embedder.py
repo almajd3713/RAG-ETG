@@ -7,8 +7,8 @@ with open("config.json", "r") as f:
 # ----------------
 
 class LLMEmbedder:
-	def __init__(self, model_name, groq_client):
-			self.model = SentenceTransformer(model_name)
+	def __init__(self, groq_client, config):
+			self.model = SentenceTransformer(config['embedding_model']['name'])
 			self.groq_client = groq_client
 
 	def embed(self, text):

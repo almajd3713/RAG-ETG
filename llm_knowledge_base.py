@@ -1,16 +1,22 @@
 import json
+
+import chromadb
 from llm_embedder import LLMEmbedder
 from chromadb import Collection
 
 # --- SETUP ---
-with open("config.json", "r") as f:
-    config = json.load(f)
+client = chromadb.PersistentClient(
+    path="chroma_db",
+)
 # ----------------
 
 class KnowledgeBase:
-	def __init__(self, embedder: LLMEmbedder, collection: Collection):
+	def __init__(self, embedder: LLMEmbedder, config: dict):
+		self.config = config
 		self.embedder = embedder
-		self.collection = collection
+		self.collection = client.get_collection(
+			name=config['embedding_model']['collection_name']
+		)
 
 	def embed(self, text):
 		return self.embedder.embed(text)
@@ -34,7 +40,7 @@ class KnowledgeBase:
 			"""
 			query_text = self.embedder.get_query_text(query_info['query'])
 			emb = self.embedder.embed(query_text)
-			if not config.get('skip_reformatting', False) and "metadata" in query_info:
+			if not self.config.get('skip_reformatting', False) and "metadata" in query_info:
 				where_clause = {
 					"$or": [
 						{"section": query_info["metadata"]["section"]},
@@ -46,11 +52,11 @@ class KnowledgeBase:
 
 			results = self.collection.query(
 				query_embeddings=[emb],
-				n_results=config['retrieval_settings']['top_k'],
+				n_results=self.config['retrieval_settings']['top_k'],
 				where=where_clause
 			)
-   
-			threshold = config['retrieval_settings']['similarity_threshold']
+
+			threshold = self.config['retrieval_settings']['similarity_threshold']
 			if threshold is not None:
 				# Extract raw fields
 				documents = results['documents'][0]
