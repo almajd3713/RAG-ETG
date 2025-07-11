@@ -59,6 +59,11 @@ class KnowledgeBase:
 				where=where_clause
 			)
 
+			if self.logger: 
+				self.logger.info(f"Scores: {results['distances'][0]}")
+				for id, distance in zip(results['ids'][0], results['distances'][0]):
+					self.logger.info(f"ID: {id}, Distance: {distance}")
+
 			threshold = self.config['retrieval_settings']['similarity_threshold']
 			if threshold is not None:
 				# Extract raw fields
