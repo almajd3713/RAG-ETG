@@ -7,9 +7,10 @@ with open("config.json", "r") as f:
 # ----------------
 
 class LLMEmbedder:
-	def __init__(self, groq_client, config):
+	def __init__(self, groq_client, config, logger=None):
 			self.model = SentenceTransformer(config['embedding_model']['name'])
 			self.groq_client = groq_client
+			self.logger = logger
 
 	def embed(self, text):
 			return self.model.encode(
@@ -75,7 +76,7 @@ class LLMEmbedder:
 			)
 
 			if response.choices:
-					return json.loads(response.choices[0].message.content.strip())
+				return json.loads(response.choices[0].message.content.strip())
 			return None
     
 	def _extract_query_info_without_reformatting(self, query):

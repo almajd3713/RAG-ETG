@@ -11,12 +11,13 @@ client = chromadb.PersistentClient(
 # ----------------
 
 class KnowledgeBase:
-	def __init__(self, embedder: LLMEmbedder, config: dict):
+	def __init__(self, embedder: LLMEmbedder, config: dict, logger=None):
 		self.config = config
 		self.embedder = embedder
 		self.collection = client.get_collection(
-			name=config['embedding_model']['collection_name']
+			name=f"rag_etg_{config['embedding_model']['collection_name']}"
 		)
+		self.logger = logger
 
 	def embed(self, text):
 		return self.embedder.embed(text)
@@ -26,8 +27,10 @@ class KnowledgeBase:
 		Process the user query to extract relevant information and retrieve context.
 		"""
 		query_info = self.embedder.extract_query_info(query)
+		if self.logger: self.logger.info(f"Query Info: {json.dumps(query_info, indent=2)}")
 		context_raw = self._query(query_info)
 		context_array = [doc['document'] for doc in context_raw]
+		if self.logger: self.logger.info(f"Context Array: {context_array}")
 
 		if not context_array:
 			return "Not enough information in the context to answer this question."

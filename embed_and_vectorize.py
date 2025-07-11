@@ -48,9 +48,6 @@ def embed_and_vectorize_data(data, model_name, model):
       print(f"Processed {idx} chunks")
       logging.info(f"Processed {idx} chunks for model {model_name}")
 
-def save_vectors():
-  client.persist()
-  
 # models = {
     # "bge": SentenceTransformer("BAAI/bge-base-en-v1.5"),
     # "e5": SentenceTransformer("intfloat/e5-base-v2"),

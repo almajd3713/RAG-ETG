@@ -6,7 +6,7 @@ with open("config.json", "r") as f:
 from llm_manager import LLMManager
 
 if __name__ == "__main__":
-    llm_manager = LLMManager()
+    llm_manager = LLMManager(config, True, log_dir=config.get('log_dir', None))
 
     if config['is_cli']:
         user_query = input("Enter your query: ")

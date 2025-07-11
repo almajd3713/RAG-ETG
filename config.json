@@ -10,5 +10,10 @@
   "retrieval_settings": {
     "top_k": 2,
     "similarity_threshold": 0.6
+  },
+  "log_dir": "logs",
+  "chat_history": {
+    "chat_limit": 8,
+    "context_limit": 4
   }
 }

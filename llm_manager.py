@@ -2,6 +2,10 @@ import json
 from llm_embedder import LLMEmbedder
 from llm_knowledge_base import KnowledgeBase
 from persistent_chat import ChatHistory
+import logging
+import datetime
+
+# Set up logging
 
 # --- SETUP ---
 with open("config.json", "r") as f:
@@ -17,16 +21,26 @@ client = Groq(api_key=os.getenv("GROQ_KEY"))
 # ----------------
 
 class LLMManager:
-    def __init__(self, config, persistent=False):
+    def __init__(self, config, persistent=False, log_dir=None):
+        if log_dir:
+            log_dir = os.path.join(log_dir, "llm_manager")
+            self.logger = True
+            if not os.path.exists(log_dir):
+              os.makedirs(log_dir)
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            logging.basicConfig(level=logging.INFO, filename=os.path.join(log_dir, f"{current_time}.log"),
+                                format='%(asctime)s - %(levelname)s - %(message)s')
+        
         self.config = config
-        self.embedder = LLMEmbedder(client, config)
-        self.knowledge_base = KnowledgeBase(self.embedder, config)
+        self.embedder = LLMEmbedder(client, config, logging)
+        self.knowledge_base = KnowledgeBase(self.embedder, config, logging)
         self.persistent = persistent
         if self.persistent:
             self.chat_history = ChatHistory(
                 chat_limit=config['chat_history']['chat_limit'],
                 context_limit=config['chat_history']['context_limit']
             )
+
 
     def embed(self, text):
         return self.embedder.embed(text)
@@ -35,21 +49,24 @@ class LLMManager:
         """
         Process the user query to extract relevant information and retrieve context, and combine it with previous context
         """
+        try:
+            additional_context = ""
+            if self.persistent:
+                additional_context = str(self.chat_history)
+            context_array = self.knowledge_base.query(query)
+
+            if not context_array:
+              return "Not enough information in the context to answer this question."
         
-        additional_context = ""
-        if self.persistent:
-            additional_context = str(self.chat_history)
-        context_array = self.knowledge_base.query(query)
-        
-        if not context_array:
-            return "Not enough information in the context to answer this question."
-        
-        answer = self._query(query, context_array, additional_context)
-        if self.persistent:
-            self.chat_history.inqueue_context("\n---\n".join(context_array))
-            self.chat_history.inqueue_message("user", query)
-            self.chat_history.inqueue_message("assistant", answer)
-        return answer
+            answer = self._query(query, context_array, additional_context)
+            if self.persistent:
+                self.chat_history.inqueue_context("\n---\n".join(context_array))
+                self.chat_history.inqueue_message("user", query)
+                self.chat_history.inqueue_message("assistant", answer)
+            return answer
+        except Exception as e:
+            logging.error(f"Error in LLMManager query: {e}")
+            return "An error occurred while processing your query. Please try again later."
 
     def _query(self, query, context_array, additional_context=None):
         """
@@ -67,6 +84,8 @@ class LLMManager:
         User Question:
         {query}
         """
+        logging.info(f"System Prompt: {system_prompt}")
+        logging.info(f"User Query: {query}")
         
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
@@ -78,4 +97,6 @@ class LLMManager:
             temperature=0.0
         )
         if response.choices:
-            return response.choices[0].message.content.strip()
+            result = response.choices[0].message.content.strip()
+            if self.logger: logging.info(f"LLM Response: {result}")
+            return result
