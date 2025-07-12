@@ -62,8 +62,8 @@ def collapse_bullet_points(content_list):
 def clean_links_and_templates(text, filename):
     # Convert {{Synergy|...}} to readable format
     text = re.sub(r"\{\{Synergy\|([^\}]+)\}\}", fr"the {filename.split('.')[0]} has a synergy called \1: ", text)
-    # Convert {{Quality|...}} to readable format
-    text = re.sub(r"\{\{Quality\|([^\}]+)\}\}", r"Quality: \1 ", text)
+    # Convert {{Quality|...}} to readable format (case insensitive)
+    text = re.sub(r"\{\{Quality\|([^\}]+)\}\}", r"\1", text, flags=re.IGNORECASE)
     # Preserve links in format: display_text (link_target)
     text = re.sub(r"\[\[([^\|\]]+)\|([^\]]+)\]\]", r"\2 (\1)", text)  # [[target|text]] -> text (target)
     text = re.sub(r"\[\[([^\]]+)\]\]", r"\1", text)  # [[target]] -> target
