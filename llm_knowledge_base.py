@@ -23,11 +23,11 @@ class KnowledgeBase:
 	def embed(self, text):
 		return self.embedder.embed(text)
 
-	def query(self, query):
+	def query(self, query, conversation_focus=None):
 		"""
 		Process the user query to extract relevant information and retrieve context.
 		"""
-		query_info = self.embedder.extract_query_info(query, self.chat_history.get_chat())
+		query_info = self.embedder.extract_query_info(query, self.chat_history.get_chat(), conversation_focus)
 		if self.logger: self.logger.info(f"Query Info: {json.dumps(query_info, indent=2)}")
   
 		# Check if the query has enough context to skip lookup, avoids bloating context with unnecessary information.
@@ -97,7 +97,7 @@ class KnowledgeBase:
 			self._cosine_distance(self.embed(reformulated_query), self.embed(item)) for item in self.chat_history.context_history
 		]
 		if self.logger: self.logger.info(f"Context Scores: {scores}")
-		has_enough_context = any(score < self.config['retrieval_settings']['similarity_threshold'] for score in scores)
+		has_enough_context = any(score < self.config['chat_history']['lookup_score_threshold'] for score in scores)
 		if self.logger: self.logger.info(f"Has enough context: {has_enough_context}")
 		return has_enough_context
 

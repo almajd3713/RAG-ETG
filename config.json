@@ -15,7 +15,7 @@
   "chat_history": {
     "chat_limit": 8,
     "context_limit": 4,
-    "lookup_score_threshold": 0.5
+    "lookup_score_threshold": 0.25
   },
 
   "llm_engine": {

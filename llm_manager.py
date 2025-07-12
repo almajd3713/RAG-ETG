@@ -47,12 +47,16 @@ class LLMManager:
         """
         Process the user query to extract relevant information and retrieve context, and combine it with previous context
         """
-        try:
+        try:            
+            # Although I'd rather add all three at the same time, focus does consider the current query in its decision
+            if self.persistent:
+                self.chat_history.inqueue_message("user", query)
+            conversation_focus = self._get_conversation_focus()
+            
             additional_context = None
             if self.persistent:
                 additional_context = str(self.chat_history)
-            reformulated_query, context_array = self.knowledge_base.query(query)
-            conversation_focus = self._get_conversation_focus()
+            reformulated_query, context_array = self.knowledge_base.query(query, conversation_focus)
 
             answer = self._query(reformulated_query, 
                 context_array=context_array, 
@@ -73,7 +77,6 @@ class LLMManager:
                 
             if self.persistent:
                 if context_array: self.chat_history.inqueue_context(context_array)
-                self.chat_history.inqueue_message("user", query)
                 self.chat_history.inqueue_message("assistant", answer)
             return answer
         except Exception as e:
@@ -92,7 +95,7 @@ class LLMManager:
 
         {f"Context: {context_block}" if context_block else ""}
 
-        {f"The current object of focus for this conversation is {conversation_focus}" if conversation_focus else ""}
+        {conversation_focus if conversation_focus else ""}
         """
         logging.info(f"System Prompt: {system_prompt}")
         logging.info(f"User Query: {query}")
