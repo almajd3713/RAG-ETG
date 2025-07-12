@@ -55,8 +55,13 @@ class LLMManager:
             if self.persistent:
                 additional_context = str(self.chat_history)
             reformulated_query, context_array = self.knowledge_base.query(query)
-            
-            answer = self._query(reformulated_query, context_array=context_array, additional_context=additional_context)
+            conversation_focus = self._get_conversation_focus()
+
+            answer = self._query(reformulated_query, 
+                context_array=context_array, 
+                additional_context=additional_context,
+                conversation_focus=conversation_focus
+            )
             if self.persistent:
                 if context_array: self.chat_history.inqueue_context(context_array)
                 self.chat_history.inqueue_message("user", query)
@@ -66,7 +71,7 @@ class LLMManager:
             logging.error(f"Error in LLMManager query: {e}")
             return "An error occurred while processing your query. Please try again later."
 
-    def _query(self, query, context_array=None, additional_context=None):
+    def _query(self, query, context_array=None, additional_context=None, conversation_focus=None):
         """
         Process the user query and context array to generate a response.
         """
@@ -77,6 +82,8 @@ class LLMManager:
         {additional_context if additional_context else ""}
 
         {f"Context: {context_block}" if context_block else ""}
+
+        {f"The current object of focus for this conversation is {conversation_focus}" if conversation_focus else ""}
         """
         logging.info(f"System Prompt: {system_prompt}")
         logging.info(f"User Query: {query}")
@@ -94,3 +101,32 @@ class LLMManager:
             result = response.choices[0].message.content.strip()
             if self.logger: logging.info(f"LLM Response: {result}")
             return result
+    def _get_conversation_focus(self):
+        """
+        Get the conversation focus based on the chat history.
+        """
+        if not self.persistent or not len(self.chat_history.message_history):
+            return None
+        conversation = '\n'.join([f"{m['role']}: {m['text']}" for m in self.chat_history.message_history])
+        if self.logger: logging.info(f"Current Conversation: {conversation}")
+        
+        system_prompt = f"""
+        You are an expert on the video game "Enter the Gungeon". Based on the conversation below, Determine the main object of focus for the conversation, which may be referred to as "it" or "that". If there is no clear focus, return None.
+        """
+        user_query = f"Conversation: {conversation}\nWhat is the main object of focus for the conversation?"
+        if self.logger: logging.info(f"System Prompt: {system_prompt}")
+        if self.logger: logging.info(f"User Query: {user_query}")
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_query}
+            ],
+            max_tokens=100,
+            temperature=0.0
+        )
+        if response.choices:
+            result = response.choices[0].message.content.strip()
+            if self.logger: logging.info(f"Conversation Focus: {result}")
+            return result
+        return None
