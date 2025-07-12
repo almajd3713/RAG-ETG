@@ -33,7 +33,7 @@ class KnowledgeBase:
 		# Check if the query has enough context to skip lookup, avoids bloating context with unnecessary information.
 		if self.check_if_in_context(query_info['query']):
 			if self.logger: self.logger.info("Query has enough context, skipping lookup.")
-			return query_info['query'], None
+			return query_info, None
   
 		# Query the ChromaDB collection
 		context_raw = self._query(query_info)
@@ -42,7 +42,7 @@ class KnowledgeBase:
 		if not context_array:
 			return "Not enough information in the context to answer this question."
 
-		return query_info['query'], context_array
+		return query_info, context_array
 
 	def _query(self, query_info):
 			"""
@@ -83,6 +83,16 @@ class KnowledgeBase:
 				]
 				return filtered_docs
 			return results
+	def _query_forced(self, query_info, conversation_focus=None):
+		if self.logger: self.logger.info(f"Forced lookup for query: {query_info['query']}")
+		context_raw = self._query(query_info)
+		context_array = [doc['document'] for doc in context_raw]
+		if self.logger: self.logger.info(f"Context Array: {context_array}")
+		if not context_array:
+			return "Not enough information in the context to answer this question."
+		return query_info, context_array
+  
+  
 	def check_if_in_context(self, reformulated_query):
 		"""
 		Check if the query has enough context to skip lookup, avoids bloating context with unnecessary information.
