@@ -23,13 +23,15 @@ logging.basicConfig(filename=log_file, level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 def load_data(file_path):
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(base_dir, file_path)
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     return data
 
 def embed_and_vectorize_data(data, model_name, model):
   collection_name = f"rag_etg_{model_name}"
-  collection = client.create_collection(
+  collection = client.get_or_create_collection(
     name=collection_name,
     configuration={
       "hnsw": {

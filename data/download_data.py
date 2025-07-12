@@ -42,11 +42,17 @@ def fetch_page_content(title):
 pages = get_all_pages()
 print(f"Found {len(pages)} pages.")
 
+# Create directory if it doesn't exist, adjacent to the script
+import os
+base_dir = os.path.dirname(os.path.abspath(__file__))
+os.makedirs(os.path.join(base_dir, "gungeon_pages"), exist_ok=True)
+ 
 for title in tqdm(pages):
     content = fetch_page_content(title)
     if not content or len(content.strip()) < 20:
         continue  # Skip empty or too-short content
     if detect(content) != "en":
         continue
-    with open(f"gungeon_pages/{title.replace('/', '_')}.txt", "w", encoding="utf-8") as f:
+    path = os.path.join(base_dir, "gungeon_pages", f"{title.replace('/', '_')}.txt")
+    with open(path, "w", encoding="utf-8") as f:
         f.write(content)
