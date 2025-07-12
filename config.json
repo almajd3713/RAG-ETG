@@ -1,7 +1,8 @@
 {
   "embedding_model": {
     "name": "BAAI/bge-base-en-v1.5",
-    "collection_name": "bge"
+    "collection_name": "bge",
+    "use_gpu": true
   },
   "prepend_chunks_and_queries": false,
   "skip_reformatting": false,

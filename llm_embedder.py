@@ -8,7 +8,10 @@ with open("config.json", "r") as f:
 
 class LLMEmbedder:
 	def __init__(self, engine, config, logger=None):
-			self.model = SentenceTransformer(config['embedding_model']['name'])
+			self.model = SentenceTransformer(
+     config['embedding_model']['name'],
+     device='cuda' if config['embedding_model']['use_gpu'] else 'cpu',
+     )
 			self.engine = engine
 			self.logger = logger
 
