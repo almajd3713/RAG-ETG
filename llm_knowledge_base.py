@@ -27,19 +27,18 @@ class KnowledgeBase:
 		"""
 		Process the user query to extract relevant information and retrieve context.
 		"""
-		query_info = self.embedder.extract_query_info(query, self.chat_history.get_context())
+		query_info = self.embedder.extract_query_info(query, self.chat_history.get_chat())
 		if self.logger: self.logger.info(f"Query Info: {json.dumps(query_info, indent=2)}")
   
 		# Check if the query has enough context to skip lookup, avoids bloating context with unnecessary information.
 		if self.check_if_in_context(query_info['query']):
 			if self.logger: self.logger.info("Query has enough context, skipping lookup.")
-			return [self.chat_history.get_context()]
+			return query_info['query'], None
   
 		# Query the ChromaDB collection
 		context_raw = self._query(query_info)
 		context_array = [doc['document'] for doc in context_raw]
 		if self.logger: self.logger.info(f"Context Array: {context_array}")
-
 		if not context_array:
 			return "Not enough information in the context to answer this question."
 
@@ -68,7 +67,6 @@ class KnowledgeBase:
 			)
 
 			if self.logger: 
-				self.logger.info(f"Scores: {results['distances'][0]}")
 				for id, distance in zip(results['ids'][0], results['distances'][0]):
 					self.logger.info(f"ID: {id}, Distance: {distance}")
 
@@ -91,17 +89,19 @@ class KnowledgeBase:
 		"""
 		if self.logger: self.logger.info(f"Checking if context is enough for query: {reformulated_query}, current context length: {len(self.chat_history.context_history)}")
 		if not self.chat_history: return False
+		if not len(self.chat_history.context_history):
+			if self.logger: self.logger.info("No context available, lookup is necessary.")
+			return False
   
-		context = [item['text'] for item in self.chat_history.context_history]
 		scores = [
-			self._cosine_similarity(self.embed(reformulated_query), self.embed(item)) for item in context
+			self._cosine_distance(self.embed(reformulated_query), self.embed(item)) for item in self.chat_history.context_history
 		]
 		if self.logger: self.logger.info(f"Context Scores: {scores}")
 		has_enough_context = any(score < self.config['retrieval_settings']['similarity_threshold'] for score in scores)
-		if self.logger: self.logger.info(f"Should lookup: {has_enough_context}")
+		if self.logger: self.logger.info(f"Has enough context: {has_enough_context}")
 		return has_enough_context
 
-	def _cosine_similarity(self, vec1, vec2):
+	def _cosine_distance(self, vec1, vec2):
 		"""
 		Compute the cosine similarity between two vectors.
 		"""
@@ -114,4 +114,5 @@ class KnowledgeBase:
 
 		if magnitude1 == 0 or magnitude2 == 0:
 			return 0.0
-		return dot_product / (magnitude1 * magnitude2)
+		output = dot_product / (magnitude1 * magnitude2)
+		return 1 - output
