@@ -27,7 +27,7 @@ class GroqLLMEngine(LLMEngine):
         Initialize the Groq LLM engine with the model name and default parameters.
         """
         super().__init__(model_name, defaults)
-        self.groq_client = Groq(os.getenv("GROQ_KEY"))
+        self.groq_client = Groq(api_key=os.getenv("GROQ_KEY"))
 
     def generate_response(self, params: dict) -> str:
         response = self.groq_client.chat.completions.create(
@@ -56,6 +56,9 @@ class GoogleLLMEngine(LLMEngine):
               temperature=params.get("temperature", self.temperature),
               max_tokens=params.get("max_tokens", self.max_tokens),
               system_instruction= params.get("system_query", ""),
+              thinking_config=types.ThinkingConfig(
+                  thinking_budget=0
+              )
           )
         )
         return response.candidates[0].content.strip()

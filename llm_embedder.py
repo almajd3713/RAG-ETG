@@ -77,7 +77,7 @@ class LLMEmbedder:
 			})
 
 			if response:
-				return json.loads(response.choices[0].message.content.strip())
+				return json.loads(response)
 			return None
     
 	def _extract_query_info_without_reformatting(self, query):
