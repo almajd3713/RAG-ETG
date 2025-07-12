@@ -16,5 +16,14 @@
     "chat_limit": 8,
     "context_limit": 4,
     "lookup_score_threshold": 0.5
+  },
+
+  "llm_engine": {
+    "platform": "groq",
+    "model_name": "llama-3.1-8b-instant",
+    "defaults": {
+      "temperature": 0.1,
+      "max_tokens": 500
+    }
   }
 }

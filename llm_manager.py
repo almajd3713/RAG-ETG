@@ -1,23 +1,15 @@
 import json
 from llm_embedder import LLMEmbedder
 from llm_knowledge_base import KnowledgeBase
+from llm_engines import get_engine
 from chat_history import ChatHistory
 import logging
 import datetime
-
-# Set up logging
+import os
 
 # --- SETUP ---
 with open("config.json", "r") as f:
     config = json.load(f)
-
-
-import os
-import dotenv
-dotenv.load_dotenv()
-
-from groq import Groq
-client = Groq(api_key=os.getenv("GROQ_KEY"))
 # ----------------
 
 class LLMManager:
@@ -39,7 +31,12 @@ class LLMManager:
                 context_limit=config['chat_history']['context_limit']
             )
         else: self.chat_history = None
-        self.embedder = LLMEmbedder(client, config, logging)
+        self.engine = get_engine(
+            config['llm_engine']['platform'], 
+            config['llm_engine']['model_name'], 
+            config['llm_engine']['defaults']
+        )
+        self.embedder = LLMEmbedder(self.engine, config, logging)
         self.knowledge_base = KnowledgeBase(self.embedder, self.chat_history, config, logging)
 
 
@@ -88,19 +85,15 @@ class LLMManager:
         logging.info(f"System Prompt: {system_prompt}")
         logging.info(f"User Query: {query}")
         
-        response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": query}
-            ],
-            max_tokens=500,
-            temperature=0.0
-        )
-        if response.choices:
-            result = response.choices[0].message.content.strip()
-            if self.logger: logging.info(f"LLM Response: {result}")
-            return result
+        response = self.engine.generate_response({
+            "system_query": system_prompt,
+            "user_query": query,
+            "max_tokens": self.config['llm_engine']['defaults'].get('max_tokens', 500),
+            "temperature": self.config['llm_engine']['defaults'].get('temperature', 0.0)
+        })
+        if self.logger: logging.info(f"LLM Response: {response}")
+        return response
+
     def _get_conversation_focus(self):
         """
         Get the conversation focus based on the chat history.
@@ -116,17 +109,13 @@ class LLMManager:
         user_query = f"Conversation: {conversation}\nWhat is the main object of focus for the conversation?"
         if self.logger: logging.info(f"System Prompt: {system_prompt}")
         if self.logger: logging.info(f"User Query: {user_query}")
-        response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_query}
-            ],
-            max_tokens=100,
-            temperature=0.0
-        )
-        if response.choices:
-            result = response.choices[0].message.content.strip()
-            if self.logger: logging.info(f"Conversation Focus: {result}")
-            return result
+        response = self.engine.generate_response({
+            "system_query": system_prompt,
+            "user_query": user_query,
+            "max_tokens": 100,
+            "temperature": 0.0
+        })
+        if response:
+            if self.logger: logging.info(f"Conversation Focus: {response}")
+            return response
         return None
