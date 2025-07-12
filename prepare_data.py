@@ -245,12 +245,16 @@ def augment_chunks(chunks):
 
 def filter_irrelevant_chunks(chunks):
     """
-    Filters out irrelevant chunks (See also and References).
+    Filters out irrelevant chunks: 
+    - See also, References
+    - Any section with an id starting with "Asset strings"
     """
     filtered_chunks = []
     for chunk in chunks:
         if (not chunk['meta']['section'].lower().startswith('see also') and
             not chunk['meta']['section'] == "References"):
+            filtered_chunks.append(chunk)
+        elif not chunk['id'].startswith("Asset strings"):
             filtered_chunks.append(chunk)
         else:
             logging.info(f"Dropped chunk: {chunk.get('id', '')}")
@@ -276,6 +280,7 @@ if __name__ == "__main__":
   logging.info("Filtering English chunks...")
   chunks = filter_english_chunks(chunks)
   logging.info(f"Total English chunks: {len(chunks)}")
+  
   logging.info("Saving chunks to JSON file...")
   with open("all_chunks.json", "w", encoding="utf-8") as f:
     json.dump(chunks, f, indent=2, ensure_ascii=False)
