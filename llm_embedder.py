@@ -7,9 +7,9 @@ with open("config.json", "r") as f:
 # ----------------
 
 class LLMEmbedder:
-	def __init__(self, groq_client, config, logger=None):
+	def __init__(self, engine, config, logger=None):
 			self.model = SentenceTransformer(config['embedding_model']['name'])
-			self.groq_client = groq_client
+			self.engine = engine
 			self.logger = logger
 
 	def embed(self, text):
@@ -69,17 +69,14 @@ class LLMEmbedder:
 			"""
 			if self.logger: self.logger.info(f"Reformulator System Prompt: {system_prompt}")
 			if self.logger: self.logger.info(f"Reformulator User Query: {query}")
-			response = self.groq_client.chat.completions.create(
-					model="llama-3.1-8b-instant",
-					messages=[
-							{"role": "system", "content": system_prompt},
-							{"role": "user", "content": query}
-					],
-					max_tokens=100,
-					temperature=0.0
-			)
+			response = self.engine.generate_response({
+				"system_query": system_prompt,
+				"user_query": query,
+				"max_tokens": 100,
+				"temperature": 0.0
+			})
 
-			if response.choices:
+			if response:
 				return json.loads(response.choices[0].message.content.strip())
 			return None
     
