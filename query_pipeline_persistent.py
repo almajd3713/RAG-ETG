@@ -3,7 +3,7 @@ import json
 with open("config.json", "r") as f:
     config = json.load(f)
 
-from llm_manager import LLMManager
+from llm.llm_manager import LLMManager
 
 if __name__ == "__main__":
   llm_manager = LLMManager(config, True, log_dir=config.get('log_dir', None))

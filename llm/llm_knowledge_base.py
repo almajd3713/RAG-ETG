@@ -1,8 +1,8 @@
 import json
 
 import chromadb
-from chat_history import ChatHistory
-from llm_embedder import LLMEmbedder
+from chat.chat_history import ChatHistory
+from llm.llm_embedder import LLMEmbedder
 
 # --- SETUP ---
 client = chromadb.PersistentClient(
