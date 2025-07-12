@@ -252,12 +252,11 @@ def filter_irrelevant_chunks(chunks):
     filtered_chunks = []
     for chunk in chunks:
         if (not chunk['meta']['section'].lower().startswith('see also') and
-            not chunk['meta']['section'] == "References"):
-            filtered_chunks.append(chunk)
-        elif not chunk['id'].startswith("Asset strings"):
+            not chunk['meta']['section'] == "References" and
+            not chunk['id'].startswith("Asset strings")):
             filtered_chunks.append(chunk)
         else:
-            logging.info(f"Dropped chunk: {chunk.get('id', '')}")
+            logging.info(f"Dropped irrelevant chunk: {chunk.get('id', '')}")
     return filtered_chunks
 
 if __name__ == "__main__":
