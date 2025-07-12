@@ -18,22 +18,22 @@ class LLMEmbedder:
 					device='cuda', batch_size=64, show_progress_bar=False
 			)
 
-	def extract_query_info(self, query, additional_context=None):
+	def extract_query_info(self, query, previous_chat=None):
 			"""
 			Extracts relevant information from the user query.
 			"""
 			if config.get('skip_reformatting', False):
 					return self._extract_query_info_without_reformatting(query)
 			else:
-					return self._extract_query_info_with_reformatting(query, additional_context)
-	def _extract_query_info_with_reformatting(self, query, additional_context=None):
+					return self._extract_query_info_with_reformatting(query, previous_chat)
+	def _extract_query_info_with_reformatting(self, query, previous_chat=None):
 			"""
 			Extracts relevant information from the user query.
 			"""
 			system_prompt = f"""
 			You are a query rewriter for a retrieval system in a roguelike videogame context. Your task is to reformulate user queries by removing filler words and making them short, specific, and semantically equivalent. Do not add new information. Do not change the meaning.
 
-			{"This is the past conversation, you must consider it when reformulating the query: \n" + (additional_context if additional_context else "")}
+			{"This is the past conversation, you must consider it when reformulating the query: \n" + (previous_chat if previous_chat else "")}
 
 			Always respond with this JSON format:
 			{{

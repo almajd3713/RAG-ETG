@@ -59,6 +59,18 @@ class LLMManager:
                 additional_context=additional_context,
                 conversation_focus=conversation_focus
             )
+            # If the LLM response is not satisfactory and the query was believed to have enough context, request additional context.
+            if answer in ["I don't know", "Not enough information in the context to answer this question."] and not context_array:
+                if self.logger: logging.info("Although the query was believed to have enough context, the LLM could not answer it. Requesting additional context via lookup.")
+                context_array = self.knowledge_base._query(reformulated_query)
+                if not context_array:
+                    return answer
+                answer = self._query(reformulated_query, 
+                    context_array=context_array, 
+                    additional_context=additional_context,
+                    conversation_focus=conversation_focus
+                )
+                
             if self.persistent:
                 if context_array: self.chat_history.inqueue_context(context_array)
                 self.chat_history.inqueue_message("user", query)
