@@ -52,14 +52,14 @@ class KnowledgeBase:
 			emb = self.embedder.embed(query_text)
 			if not self.config.get('skip_reformatting', False) and "metadata" in query_info:
 				where_clause = {
-					"$or": [
-						{"section": query_info["metadata"]["section"]},
-						{"title": query_info["metadata"]["item"]}
-					]
+					"section": query_info["metadata"]["section"],
+					# "$and": [
+						# {"section": query_info["metadata"]["section"]},
+						# {"title": query_info["metadata"]["item"]}
+					# ]
 				}
 			else:
 				where_clause = None
-
 			results = self.collection.query(
 				query_embeddings=[emb],
 				n_results=self.config['retrieval_settings']['top_k'],
@@ -106,7 +106,10 @@ class KnowledgeBase:
 		scores = [
 			self._cosine_distance(self.embed(reformulated_query), self.embed(item)) for item in self.chat_history.context_history
 		]
-		if self.logger: self.logger.info(f"Context Scores: {scores}")
+		if self.logger: 
+			self.logger.info(f"Context Scores: ")
+			for i, item in enumerate(self.chat_history.context_history):
+				self.logger.info(f"Item: {item[:50]}, Score: {scores[i]}")
 		has_enough_context = any(score < self.config['chat_history']['lookup_score_threshold'] for score in scores)
 		if self.logger: self.logger.info(f"Has enough context: {has_enough_context}")
 		return has_enough_context
